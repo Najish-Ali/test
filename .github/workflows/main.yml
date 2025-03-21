@@ -1,0 +1,101 @@
+name: Build, Dockerize, Deploy, and Database Operations
+
+on:
+  workflow_dispatch: {}
+    # inputs:
+    #   sql_file:
+    #     description: 'Path to SQL file for DB setup'
+    #     required: true
+    #     default: 'scripts/rcoem.acient.bootcoding.in.sql'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout This Repo (New Repo)
+        uses: actions/checkout@v2
+
+      - name: Clone Company Production Repository
+        run: |
+          git clone https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/bootcoding-developer/codelab-new-ui.git production-repo
+          ls -lah production-repo
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '21.6.1'
+
+      - name: Install dependencies & Build the Application
+        run: |
+          cd production-repo  # Move into the cloned production repo
+          npm ci --force
+          npm run build
+
+      - name: Archive Static Files
+        run: |
+          cd production/dist
+          tar -czf ../../static-files.tar.gz assets img index.html public
+
+      - name: Upload Static Files Archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-files
+          path: static-files.tar.gz
+          
+  # database-setup:
+  #   runs-on: ubuntu-latest
+  #   needs: build
+
+  #   steps:
+  #     - name: Checkout This Repo (New Repo)
+  #       uses: actions/checkout@v2
+
+  #     - name: Install PostgreSQL Client
+  #       run: sudo apt-get install -y postgresql-client
+
+  #     - name: Install Python Dependencies
+  #       run: pip3 install psycopg2-binary
+
+  #     - name: Run Database Setup Script
+  #       env:
+  #         DB_HOST: ${{ secrets.DB_HOST }}
+  #         DB_PORT: ${{ secrets.DB_PORT }}
+  #         DB_USERNAME: ${{ secrets.DB_USERNAME }}
+  #         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+  #         DB_DATABASE: ""
+  #         SCHEMA_NAME: ""
+  #       run: python3 scripts/auto_db_script.py ${{ github.event.inputs.sql_file }}
+        
+  # deploy:
+  #   needs: build
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: Download Static Files
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: static-files
+  #         path: .
+
+  #     - name: Install sshpass
+  #       run: sudo apt-get install -y sshpass
+
+  #     - name: Deploy Static Files to VM
+  #       run: |
+  #         sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no static-files.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/codelab/aceint-web/aceint/
+
+  #     - name: Extract and Deploy Files on VM
+  #       run: |
+  #         sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+  #         cd /root/codelab/aceint-web/aceint/
+  #         mkdir -p backup_resources
+  #         TIMESTAMP=$(date +'%Y%m%d%H%M%S')
+  #         BACKUP_DIR="backup_resources/$TIMESTAMP"
+  #         mkdir -p $BACKUP_DIR
+  #         mv assets img index.html public $BACKUP_DIR/ 2>/dev/null || true
+  #         tar -xzf static-files.tar.gz
+  #         mv public ../ || true
+  #         systemctl restart nginx
+  #         rm static-files.tar.gz
+  #         EOF
