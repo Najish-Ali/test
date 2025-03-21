@@ -26,23 +26,23 @@ jobs:
         with:
           node-version: '21.6.1'
 
-      # - name: Change to Production Folder
-      #   run: cd production-repo
+      - name: Change to Production Folder
+        run: cd production-repo
 
-      # - name: Install dependencies (clean install)
-      #   run: npm ci
-      - name: Install dependencies (if package-lock.json is missing)
-        run: |
-          cd production-repo  # Move into the repo
-          ls -lah  # List files to confirm package-lock.json exists
+      - name: Install dependencies (clean install)
+        run: npm install --force
+      # - name: Install dependencies (if package-lock.json is missing)
+      #   run: |
+      #     cd production-repo  # Move into the repo
+      #     ls -lah  # List files to confirm package-lock.json exists
           
-          if [ -f "package-lock.json" ]; then
-            echo "Found package-lock.json, using npm ci"
-            npm ci --force
-          else
-            echo "package-lock.json not found, using npm install"
-            npm install --force
-          fi
+      #     if [ -f "package-lock.json" ]; then
+      #       echo "Found package-lock.json, using npm ci"
+      #       npm ci --force
+      #     else
+      #       echo "package-lock.json not found, using npm install"
+      #       npm install --force
+      #     fi
 
         
       - name: Build the application
