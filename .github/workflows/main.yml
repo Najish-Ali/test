@@ -26,26 +26,22 @@ jobs:
         with:
           node-version: '21.6.1'
 
-      # - name: Change to Production Folder
-      #   run: cd production-repo
-
-      # - name: Install dependencies (clean install)
-      #   run: npm ci --force
-      - name: Install dependencies (if package-lock.json is missing)
+      - name: Install dependencies (clean install)
         run: |
-          cd production-repo  # Move into the cloned repo
-          if [ ! -f "package.json" ]; then
-            echo "Error: package.json not found in production-repo!"
-            exit 1
-          fi
-
+          cd production-repo  # Ensure we are in the right directory
+          ls -lah             # Verify contents
           if [ -f "package-lock.json" ]; then
-            echo "Found package-lock.json, using npm ci"
             npm ci --force
           else
-            echo "package-lock.json not found, using npm install"
             npm install --force
           fi
+
+      - name: Build the application
+        run: |
+          cd production-repo  # Ensure we are still in the right directory
+          ls -lah             # Debugging step to verify files
+          npm run build
+
 
         
       - name: Build the application
